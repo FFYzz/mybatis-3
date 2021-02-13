@@ -21,14 +21,25 @@ import java.util.LinkedList;
 import org.apache.ibatis.cache.Cache;
 
 /**
+ * FIFO 的有限缓存的队列
+ * 使用额外的 Linkedlist 保存
  * FIFO (first in, first out) cache decorator.
  *
  * @author Clinton Begin
  */
 public class FifoCache implements Cache {
 
+  /**
+   * 被装饰的 Cache
+   */
   private final Cache delegate;
+  /**
+   * key 保存队列
+   */
   private final Deque<Object> keyList;
+  /**
+   * 缓存能存放的最多的元素个数
+   */
   private int size;
 
   public FifoCache(Cache delegate) {
@@ -53,6 +64,7 @@ public class FifoCache implements Cache {
 
   @Override
   public void putObject(Object key, Object value) {
+    // 放入的时候需要放到 map 与 list 中
     cycleKeyList(key);
     delegate.putObject(key, value);
   }
@@ -75,8 +87,11 @@ public class FifoCache implements Cache {
 
   private void cycleKeyList(Object key) {
     keyList.addLast(key);
+    // 如果超过了设置的最多的个数
     if (keyList.size() > size) {
+      // 移除队头元素
       Object oldestKey = keyList.removeFirst();
+      // delegate 缓存同样需要移除
       delegate.removeObject(oldestKey);
     }
   }

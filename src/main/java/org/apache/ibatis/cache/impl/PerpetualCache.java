@@ -22,12 +22,20 @@ import org.apache.ibatis.cache.Cache;
 import org.apache.ibatis.cache.CacheException;
 
 /**
+ * 不超时的缓存
+ * 缓存的底层使用 map 存储，对缓存的操作就是对 map 的操作
  * @author Clinton Begin
  */
 public class PerpetualCache implements Cache {
 
+  /**
+   * 缓存 id
+   */
   private final String id;
 
+  /**
+   * 缓存 map
+   */
   private final Map<Object, Object> cache = new HashMap<>();
 
   public PerpetualCache(String id) {

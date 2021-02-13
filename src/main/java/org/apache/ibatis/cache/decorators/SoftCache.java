@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import org.apache.ibatis.cache.Cache;
 
 /**
+ * 与 WeakCache 的实现一致
  * Soft Reference cache decorator
  * Thanks to Dr. Heinz Kabutz for his guidance here.
  *
@@ -106,6 +107,9 @@ public class SoftCache implements Cache {
     }
   }
 
+  /**
+   * 软引用
+   */
   private static class SoftEntry extends SoftReference<Object> {
     private final Object key;
 

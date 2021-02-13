@@ -15,7 +15,6 @@
  */
 package org.apache.ibatis.cache.decorators;
 
-import java.text.MessageFormat;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +38,10 @@ public class BlockingCache implements Cache {
 
   private long timeout;
   private final Cache delegate;
+  /**
+   * 并发 map
+   * 每个 key 对应有一个 CountDownLatch
+   */
   private final ConcurrentHashMap<Object, CountDownLatch> locks;
 
   public BlockingCache(Cache delegate) {
@@ -75,6 +78,13 @@ public class BlockingCache implements Cache {
     return value;
   }
 
+  /**
+   * 不移除对象
+   * 仅释放 key 持有的锁
+   * @param key
+   *          The key
+   * @return
+   */
   @Override
   public Object removeObject(Object key) {
     // despite of its name, this method is called only to release locks
@@ -87,21 +97,29 @@ public class BlockingCache implements Cache {
     delegate.clear();
   }
 
+  /**
+   * 获取锁
+   */
   private void acquireLock(Object key) {
+    // count 为 1
     CountDownLatch newLatch = new CountDownLatch(1);
     while (true) {
       CountDownLatch latch = locks.putIfAbsent(key, newLatch);
       if (latch == null) {
         break;
       }
+      // 创建出来了锁
       try {
+        // 如果设置了时间，则超时等待
         if (timeout > 0) {
+          // 超时等待
           boolean acquired = latch.await(timeout, TimeUnit.MILLISECONDS);
           if (!acquired) {
             throw new CacheException(
                 "Couldn't get a lock in " + timeout + " for the key " + key + " at the cache " + delegate.getId());
           }
         } else {
+          // 无期限等待
           latch.await();
         }
       } catch (InterruptedException e) {
@@ -110,6 +128,9 @@ public class BlockingCache implements Cache {
     }
   }
 
+  /**
+   * 释放锁
+   */
   private void releaseLock(Object key) {
     CountDownLatch latch = locks.remove(key);
     if (latch == null) {

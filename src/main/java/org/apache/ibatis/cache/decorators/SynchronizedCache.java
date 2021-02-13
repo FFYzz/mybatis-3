@@ -18,6 +18,8 @@ package org.apache.ibatis.cache.decorators;
 import org.apache.ibatis.cache.Cache;
 
 /**
+ * 同步缓存，对缓存的所有操作均需要通过 synchronized 访问
+ *
  * @author Clinton Begin
  */
 public class SynchronizedCache implements Cache {

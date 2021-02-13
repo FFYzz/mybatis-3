@@ -23,6 +23,9 @@ import java.util.StringJoiner;
 import org.apache.ibatis.reflection.ArrayUtil;
 
 /**
+ * 通常作为缓存的 key
+ * 注意 equals 和 hashcode 方法，因为 CacheKey 会用于判断量个 sql 是否为同一个 sql
+ *
  * @author Clinton Begin
  */
 public class CacheKey implements Cloneable, Serializable {
@@ -45,14 +48,31 @@ public class CacheKey implements Cloneable, Serializable {
   private static final int DEFAULT_MULTIPLIER = 37;
   private static final int DEFAULT_HASHCODE = 17;
 
+  // 缓存 key 的属性
+
+  /**
+   * 倍数
+   */
   private final int multiplier;
+  /**
+   * 当前 CacheKey 对应的 hashcode
+   */
   private int hashcode;
+  /**
+   * 校验和: 所有 Object 的 hashcode 的和
+   */
   private long checksum;
+  /**
+   * 更新的次数
+   */
   private int count;
   // 8/21/2017 - Sonarlint flags this as needing to be marked transient. While true if content is not serializable, this
   // is not always true and thus should not be marked transient.
   private List<Object> updateList;
 
+  /**
+   * 无参构造函数
+   */
   public CacheKey() {
     this.hashcode = DEFAULT_HASHCODE;
     this.multiplier = DEFAULT_MULTIPLIER;
@@ -60,6 +80,10 @@ public class CacheKey implements Cloneable, Serializable {
     this.updateList = new ArrayList<>();
   }
 
+  /**
+   * 有参构造函数
+   * @param objects
+   */
   public CacheKey(Object[] objects) {
     this();
     updateAll(objects);
@@ -74,14 +98,16 @@ public class CacheKey implements Cloneable, Serializable {
 
     count++;
     checksum += baseHashCode;
+    // 更新 baseHashCode
     baseHashCode *= count;
 
     hashcode = multiplier * hashcode + baseHashCode;
-
+    // 添加到更新列表中
     updateList.add(object);
   }
 
   public void updateAll(Object[] objects) {
+    // 遍历更新
     for (Object o : objects) {
       update(o);
     }
